@@ -221,17 +221,34 @@ const Upload = () => {
 
       if (projectError) throw projectError;
 
-      setUploadProgress(100);
-
       toast({
         title: "تم رفع الملف!",
-        description: "سيتم بدء المعالجة قريباً"
+        description: "جاري بدء المعالجة..."
       });
 
+      // Call process-audio edge function
+      const { error: processError } = await supabase.functions.invoke('process-audio', {
+        body: {
+          projectId: project.id,
+          audioFileUrl: urlData.publicUrl,
+          sourceLanguage: formData.sourceLanguage,
+          targetLanguage: formData.targetLanguage
+        }
+      });
+
+      if (processError) {
+        console.error('Process audio error:', processError);
+        toast({
+          title: "تحذير",
+          description: "تم رفع الملف لكن حدث خطأ في بدء المعالجة. سيتم المحاولة مرة أخرى.",
+          variant: "destructive"
+        });
+      }
+
+      setUploadProgress(100);
+
       // Navigate to processing page
-      setTimeout(() => {
-        navigate(`/processing/${project.id}`);
-      }, 1000);
+      navigate(`/processing/${project.id}`);
 
     } catch (error: any) {
       toast({
